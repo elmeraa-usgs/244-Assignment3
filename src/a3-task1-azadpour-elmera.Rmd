@@ -51,20 +51,22 @@ tm_shape(oil_spill) +
 ```
 ## Static chloropleth map in ggplot in which the fill color for each county depends on the count of inland oil spill events by county for the 2008 oil spill data
 ```{r, warning=FALSE}
-oil_spill_inland <- oil_spill %>% 
-  filter(inlandmari %in% c("Inland")) %>% 
-  group_by(localecoun) %>% 
-  summarise(count = n())
+# oil_spill_inland <- oil_spill %>% 
+#   filter(inlandmari %in% c("Inland")) %>% 
+#   group_by(localecoun) %>% 
+#   summarise(count = n())
 
 county_oil <- ca_counties %>% 
   st_join(oil_spill) %>% 
-  group_by(name) %>% 
+   filter(inlandmari %in% c("Inland")) %>% 
+  group_by(localecoun) %>% 
   summarise(count = n())
   
 ggplot() +
   geom_sf(data = ca_counties) +
   geom_sf(data = county_oil, aes(fill = count)) +
-  theme_bw()
+  theme_bw()+ 
+  scale_fill_gradient(low = "grey", high = "red") 
 ```
 
 ## Citation:

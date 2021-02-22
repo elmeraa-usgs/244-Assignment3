@@ -1,0 +1,62 @@
+---
+title: 'ESM 244: Assignment 3, Task 2'
+author: "Elmera Azadpour"
+date: "2/19/2021"
+output: 
+  html_document: 
+    theme: paper
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+library(janitor)
+library(sf)
+library(raster)
+library(fasterize)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(rgeos)
+```
+
+## Read in data and stack files
+```{r,echo = FALSE, warning = FALSE, message = FALSE}
+cetacean <-  list.files(path = here("data","ca_cetaceans"), full.names = TRUE)
+cetacean_raster <- stack(cetacean)
+cetacean_raster
+plot(cetacean_raster)
+```
+
+## Apply probability threshold (of 0.6 or greater) to determine presence or non-presence
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+aquamap_fun <- function(x, thresh = 0.6){
+  y <- ifelse(x >= thresh, 1, 0)
+  return(y)
+}
+
+aquamap <- calc(cetacean_raster, fun = aquamap_fun)
+species_richness1 <- calc(aquamap, fun = sum, na.rm = TRUE)
+plot(species_richness1)
+```
+
+## Converting to dataframe and plotting
+```{r, warning = FALSE, fig.cap= "**Fig. 1** Species Richness of 16 Cetacean Species along the Coast of California. Presence of Cetacean species was determined with with a probability threshold of 0.6 or greater."}
+aquamap_df <- raster::rasterToPoints(species_richness1) %>% 
+  as.data.frame()
+
+states110 <- ne_download(scale = 110, type = 'states', category = 'cultural', returnclass = "sf") %>% filter(name %in% c("California"))
+
+ggplot() +
+geom_raster(data = aquamap_df, aes(x=x,y=y, fill = layer)) +
+  geom_sf(data = states110) +
+  scale_fill_gradient2(low = "red", mid = "white", high = "blue") +
+  labs(x = "Longitude", y = "Latitude", title = "Species Richness of Cetaceans along Coastal California", fill = "Number of Cetacean Species") +
+  theme_classic()
+```
+
+## Citation:
++ Kaschner, K., Rius-Barile, J., Kesner-Reyes, K., Garilao, C., Kullander, S., Rees, T., & Froese, R. (2016). AquaMaps: Predicted range maps for aquatic species. www.aquamaps.org
